@@ -2,14 +2,22 @@ from flask import Flask, request, jsonify, send_file
 from dotenv import load_dotenv
 import boto3
 from datetime import datetime, timedelta, timezone
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import os
 
 
 load_dotenv()
-DEFAULT_IP = os.getenv("DEFAULT_IP", "")
 app = Flask(__name__)
+limiter = Limiter(get_remote_address,app=app,default_limits=["100 per hour", "10 per minute"])
+
+DEFAULT_IP = os.getenv("DEFAULT_IP", "")
 ec2 = boto3.client("ec2")
 cloudwatch = boto3.client("cloudwatch")
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return jsonify({"error": "Too many requests. Please wait and try again."}), 429
 
 #Cloudwatch cant get instance by IP, so we need to get instance ID first
 def get_instance_id_by_ip(ip_address):
@@ -43,6 +51,7 @@ def home():
     return send_file("index.html")
 
 @app.route("/api/cpu")
+@limiter.limit("10 per minute")
 def get_cpu():
     ip_address = request.args.get("ip", DEFAULT_IP)
     hours = int(request.args.get("hours", 3))
