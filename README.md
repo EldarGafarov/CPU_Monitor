@@ -30,9 +30,3 @@ python app.py
 
 6. Enjoy :)
 
-## Usage
-
-- Select a time period from the dropdown
-- Enter the period interval in seconds
-- Enter an EC2 private IP address
-- Click Load to see the CPU graph
