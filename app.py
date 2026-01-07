@@ -13,12 +13,13 @@ cloudwatch = boto3.client("cloudwatch")
 
 #Cloudwatch cant get instance by IP, so we need to get instance ID first
 def get_instance_id_by_ip(ip_address):
-    response = ec2.describe_instances()
-    for reservation in response["Reservations"]:
-        for instance in reservation["Instances"]:
-            if instance.get("PrivateIpAddress") == ip_address:
-                return instance["InstanceId"]
-    return None
+    response = ec2.describe_instances(
+        Filters=[{"Name": "private-ip-address", "Values": [ip_address]}]
+    )
+    try:
+        return response["Reservations"][0]["Instances"][0]["InstanceId"]
+    except (IndexError, KeyError):
+        return None
 
 #To get the metrics from CloudWatch
 def get_cpu_metrics(instance_id, hours, period_seconds):
