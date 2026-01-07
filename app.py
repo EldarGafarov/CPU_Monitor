@@ -11,9 +11,6 @@ app = Flask(__name__)
 ec2 = boto3.client("ec2")
 cloudwatch = boto3.client("cloudwatch")
 
-
-
-
 #Cloudwatch cant get instance by IP, so we need to get instance ID first
 def get_instance_id_by_ip(ip_address):
     response = ec2.describe_instances()
@@ -23,14 +20,10 @@ def get_instance_id_by_ip(ip_address):
                 return instance["InstanceId"]
     return None
 
-
-
 #To get the metrics from CloudWatch
 def get_cpu_metrics(instance_id, hours, period_seconds):
     end_time = datetime.now(timezone.utc)
-    start_time = end_time - timedelta(hours=hours)
-    
-        
+    start_time = end_time - timedelta(hours=hours)     
     metrics = cloudwatch.get_metric_statistics(
         Namespace="AWS/EC2",
         MetricName="CPUUtilization",
@@ -67,7 +60,7 @@ def get_cpu():
     
     for point in datapoints:
         #Convert the timestamp to a readable format
-        timestamps.append(point["Timestamp"].strftime("%H:%M"))
+        timestamps.append(point["Timestamp"].strftime("%d/%m %H:%M"))
         cpu_values.append(round(point["Average"], 2))
     
     return jsonify({
@@ -77,6 +70,7 @@ def get_cpu():
         "cpu_values": cpu_values
     })
 
-
+#in Production it wont run with debug=True
 if __name__ == "__main__":
+    #Debug=True only for development.
     app.run(debug=True)
